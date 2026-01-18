@@ -3,17 +3,21 @@
 <head>
     <title>Book Price Compare</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        body { font-family: sans-serif; padding: 20px; background-color: #f9f9f9; }
+        h1 { color: #2c3e50; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f4f4f4; }
+        th { background-color: #f4f4f4; cursor: pointer; }
         .price { font-weight: bold; color: #2c3e50; }
-        .cheaper { color: #27ae60; }
+        .match { background-color: #e8f5e9 !important; font-weight: bold; }
+        tr:hover { background-color: #f1f1f1; }
+        #loading { padding: 20px; font-style: italic; color: #666; }
     </style>
 </head>
 <body>
     <h1>Latest Book Prices</h1>
-    <div id="loading">Loading books...</div>
+    <div id="loading">Loading books from database...</div>
+    
     <table id="bookTable" style="display:none;">
         <thead>
             <tr>
@@ -33,31 +37,39 @@
             const listEl = document.getElementById('bookList');
         
             try {
-                // 1. Try fetching via a CORS proxy to bypass "Mixed Content" (HTTP vs HTTPS)
-                const apiUrl = 'http://bookcompare.ladogudi.serv00.net/api/books';
+                // Cache Buster: appending a timestamp ensures the proxy doesn't serve an old error
+                const apiUrl = 'http://bookcompare.ladogudi.serv00.net/api/books?t=' + Date.now();
                 const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
                 
-                console.log("Fetching from:", proxyUrl);
+                console.log("Fetching fresh data from:", apiUrl);
                 const response = await fetch(proxyUrl);
                 
                 if (!response.ok) {
-                    throw new Error(`Server returned ${response.status}`);
+                    throw new Error(`Proxy unreachable (Status: ${response.status})`);
                 }
         
-                const books = await response.json();
-                console.log("Data received:", books);
-        
-                if (!Array.isArray(books)) {
-                    throw new Error("Data is not a list");
+                const data = await response.json();
+                console.log("Raw data received:", data);
+
+                // Handle cases where the backend sends an error object instead of a list
+                if (data.error) {
+                    throw new Error(`Backend Error: ${data.error}`);
+                }
+
+                // If data is wrapped or not the expected array
+                const books = Array.isArray(data) ? data : (data.books || null);
+
+                if (!books || !Array.isArray(books)) {
+                    throw new Error("Received invalid data format (Expected an Array)");
                 }
         
-                listEl.innerHTML = ''; // Clear existing
+                listEl.innerHTML = ''; 
         
                 books.forEach(book => {
                     const isMatch = book.biblusi && book.parnasi;
-                    const rowStyle = isMatch ? 'style="background-color: #e8f5e9; font-weight: bold;"' : '';
+                    const rowClass = isMatch ? 'class="match"' : '';
                     
-                    const row = `<tr ${rowStyle}>
+                    const row = `<tr ${rowClass}>
                         <td>${book.title || 'Unknown Title'}</td>
                         <td>${book.isbn || 'N/A'}</td>
                         <td class="price">${book.biblusi ? book.biblusi.toFixed(2) + ' GEL' : '—'}</td>
@@ -72,10 +84,10 @@
             } catch (err) {
                 console.error("Frontend Error:", err);
                 loadingEl.innerHTML = `
-                    <div style="color: red; padding: 20px; border: 1px solid red;">
+                    <div style="color: red; padding: 20px; border: 1px solid red; background: #fff5f5;">
                         <strong>Error Loading Data</strong><br>
                         ${err.message}<br><br>
-                        <small>Check browser console (F12) for details.</small>
+                        <button onclick="location.reload()">Retry Connection</button>
                     </div>
                 `;
             }
