@@ -34,11 +34,15 @@
                 
                 const list = document.getElementById('bookList');
                 books.forEach(book => {
-                    const row = `<tr>
+                    // If both prices exist, highlight the row
+                    const isMatch = book.biblusi && book.parnasi;
+                    const style = isMatch ? 'style="background-color: #e8f5e9;"' : '';
+                    
+                    const row = `<tr ${style}>
                         <td>${book.title}</td>
                         <td>${book.isbn}</td>
-                        <td class="price">${book.biblusi ? book.biblusi + ' GEL' : 'N/A'}</td>
-                        <td class="price">${book.parnasi ? book.parnasi + ' GEL' : 'N/A'}</td>
+                        <td class="price">${book.biblusi ? book.biblusi + ' GEL' : '—'}</td>
+                        <td class="price">${book.parnasi ? book.parnasi + ' GEL' : '—'}</td>
                     </tr>`;
                     list.innerHTML += row;
                 });
