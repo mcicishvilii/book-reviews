@@ -1,36 +1,55 @@
-<div id="app">
-  <input type="text" id="searchInput" placeholder="Search for a book...">
-  <button onclick="searchBooks()">Search</button>
-  <table id="resultsTable">
-    <thead>
-      <tr>
-        <th>Title</th>
-        <th>Biblusi Price</th>
-        <th>Parnasi Price</th>
-      </tr>
-    </thead>
-    <tbody id="resultsBody"></tbody>
-  </table>
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Book Price Compare</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .price { font-weight: bold; color: #2c3e50; }
+        .cheaper { color: #27ae60; }
+    </style>
+</head>
+<body>
+    <h1>Latest Book Prices</h1>
+    <div id="loading">Loading books...</div>
+    <table id="bookTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>Book Title</th>
+                <th>ISBN-13</th>
+                <th>Biblusi Price</th>
+                <th>Parnasi Price</th>
+            </tr>
+        </thead>
+        <tbody id="bookList"></tbody>
+    </table>
 
-<script>
-async function searchBooks() {
-  const query = document.getElementById('searchInput').value;
-  const response = await fetch(`http://bookcompare.ladogudi.serv00.net/search?q=${query}`);
-  const data = await response.json();
-  
-  const body = document.getElementById('resultsBody');
-  body.innerHTML = ''; // Clear old results
-
-  data.items.forEach(book => {
-    // Note: You'll need an endpoint that returns compared prices 
-    // or adjust your /search result to include biblusi_price and parnasi_price
-    body.innerHTML += `
-      <tr>
-        <td>${book.title}</td>
-        <td>${book.biblusi_price || 'N/A'} GEL</td>
-        <td>${book.parnasi_price || 'N/A'} GEL</td>
-      </tr>`;
-  });
-}
-</script>
+    <script>
+        async function loadBooks() {
+            try {
+                const response = await fetch('http://bookcompare.ladogudi.serv00.net/api/books');
+                const books = await response.json();
+                
+                const list = document.getElementById('bookList');
+                books.forEach(book => {
+                    const row = `<tr>
+                        <td>${book.title}</td>
+                        <td>${book.isbn}</td>
+                        <td class="price">${book.biblusi ? book.biblusi + ' GEL' : 'N/A'}</td>
+                        <td class="price">${book.parnasi ? book.parnasi + ' GEL' : 'N/A'}</td>
+                    </tr>`;
+                    list.innerHTML += row;
+                });
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('bookTable').style.display = 'table';
+            } catch (err) {
+                document.getElementById('loading').innerText = 'Error loading data.';
+            }
+        }
+        loadBooks();
+    </script>
+</body>
+</html>
