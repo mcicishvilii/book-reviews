@@ -17,7 +17,10 @@
 <body>
     <h1>Latest Book Prices</h1>
     <div id="loading">Loading books from database...</div>
-    
+    <div style="margin-bottom: 20px;">
+        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 Search by book title or ISBN..." 
+               style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+    </div>
     <table id="bookTable" style="display:none;">
         <thead>
             <tr>
@@ -93,6 +96,23 @@
             }
         }
         loadBooks();
+    
+    function filterTable() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+        const rows = document.querySelectorAll('#bookList tr');
+
+        rows.forEach(row => {
+            const title = row.cells[0].textContent.toLowerCase();
+            const isbn = row.cells[1].textContent.toLowerCase();
+            
+            if (title.includes(filter) || isbn.includes(filter)) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
     </script>
 </body>
 </html>
